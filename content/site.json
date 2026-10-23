@@ -1,19 +1,21 @@
 {
-  "_help": "Edit this file, then run: python3 build.py. Empty strings mean 'not supplied yet' and are shown as clearly marked placeholders or hidden.",
+  "_help": "Edit this file, then run: python3 build.py. Empty strings mean 'not supplied yet' and are hidden or shown as clearly marked placeholders. Icons available: camera, share, palette, music, video.",
   "name": "Visuals by KrazE",
   "site_url": "https://kidhasia.github.io/kraze-website",
   "audience": "DJs and music artists in Sri Lanka",
   "contact": {
-    "email": "",
-    "phone": "",
-    "whatsapp": "",
-    "location": ""
+    "name": "Gaveen Sooriyaarachchi",
+    "phone": "076 618 5007",
+    "phone_tel": "tel:+94766185007",
+    "whatsapp": "https://wa.me/94766185007",
+    "email": "directedby.kraze@gmail.com"
   },
   "socials": [
-    {"label": "Instagram", "url": ""},
-    {"label": "TikTok", "url": ""},
-    {"label": "YouTube", "url": ""},
-    {"label": "Facebook", "url": ""}
+    {
+      "label": "Instagram",
+      "handle": "@directedby.kraze",
+      "url": "https://www.instagram.com/directedby.kraze?vrfl=dHNtbHY2YWUxbzRq"
+    }
   ],
   "form": {
     "endpoint": "",
@@ -24,23 +26,50 @@
     {
       "title": "Video production",
       "summary": "Cinematic video that captures your sound, your sets and your stage presence.",
-      "points": ["Music videos and promo clips", "Event and set recaps", "Short-form reels and teasers"]
+      "points": [
+        "Music videos and promo clips",
+        "Event and set recaps",
+        "Short-form reels and teasers"
+      ],
+      "icon": "camera"
     },
     {
       "title": "Social media management",
       "summary": "A consistent, on-brand presence across the platforms your audience uses.",
-      "points": ["Content planning and scheduling", "Posting and channel management", "Review and refinement over time"]
+      "points": [
+        "Content planning and scheduling",
+        "Posting and channel management",
+        "Review and refinement over time"
+      ],
+      "icon": "share"
     },
     {
       "title": "Artist branding & creative design",
       "summary": "A visual identity that looks like you, from artwork to announcement graphics.",
-      "points": ["Logos and visual identity", "Cover art and event artwork", "Social and promo graphics"]
+      "points": [
+        "Logos and visual identity",
+        "Cover art and event artwork",
+        "Social and promo graphics"
+      ],
+      "icon": "palette"
     }
   ],
   "workflow": [
-    {"title": "Discover", "text": "We learn your sound, your audience and what you want to achieve."},
-    {"title": "Plan", "text": "We agree the concept, the content and the schedule."},
-    {"title": "Create", "text": "We shoot, edit and design everything in one coordinated effort."},
-    {"title": "Publish & grow", "text": "We publish, manage your channels and refine what we do next."}
+    {
+      "title": "Discover",
+      "text": "We learn your sound, your audience and what you want to achieve."
+    },
+    {
+      "title": "Plan",
+      "text": "We agree the concept, the content and the schedule."
+    },
+    {
+      "title": "Create",
+      "text": "We shoot, edit and design everything in one coordinated effort."
+    },
+    {
+      "title": "Publish & grow",
+      "text": "We publish, manage your channels and refine what we do next."
+    }
   ]
 }

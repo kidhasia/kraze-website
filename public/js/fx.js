@@ -2,6 +2,9 @@
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var fine = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
 
+  // Footer year
+  document.querySelectorAll('[data-year]').forEach(function (n) { n.textContent = new Date().getFullYear(); });
+
   // Scroll reveal
   var els = document.querySelectorAll('.reveal');
   if ('IntersectionObserver' in window && !reduce) {

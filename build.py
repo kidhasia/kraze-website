@@ -8,6 +8,7 @@ Env overrides (handy for staging/tests, nothing secret):
 import json
 import os
 import sys
+from datetime import date
 from html import escape as e
 from pathlib import Path
 
@@ -23,6 +24,8 @@ TURNSTILE = SITE["form"]["turnstile_site_key"].strip()
 MIN_SECONDS = int(SITE["form"]["min_seconds"])
 CONTACT = SITE["contact"]
 SOCIALS = [s for s in SITE["socials"] if s["url"].strip()]
+INSTAGRAM = next((s for s in SOCIALS if s["label"] == "Instagram"), None)
+YEAR = date.today().year
 CATEGORIES = ["Video production", "Social media", "Branding & design"]
 
 NAV = [("index.html", "Home"), ("work.html", "Work"), ("services.html", "Services"), ("about.html", "About")]
@@ -35,22 +38,110 @@ def logo(cls="", eager=True):
             f'alt="{e(LOGO_ALT)}" {load}></span>')
 
 
-def contact_lines():
+# Lucide-style outline icons, inlined once per page as a sprite (no dependency). Decorative: always aria-hidden.
+ICONS = {
+    "instagram": '<rect width="20" height="20" x="2" y="2" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"/>',
+    "mail": '<rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>',
+    "phone": '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>',
+    "whatsapp": '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/><path d="M9 10a.5.5 0 0 0 1 0V9a.5.5 0 0 0-1 0v1a5 5 0 0 0 5 5h1a.5.5 0 0 0 0-1h-1a.5.5 0 0 0 0 1"/>',
+    "menu": '<line x1="4" x2="20" y1="7" y2="7"/><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="17" y2="17"/>',
+    "close": '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    "arrow-up-right": '<path d="M7 7h10v10"/><path d="M7 17 17 7"/>',
+    "arrow-right": '<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+    "play": '<polygon points="6 3 20 12 6 21 6 3"/>',
+    "camera": '<path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/>',
+    "music": '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+    "palette": '<circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/>',
+    "share": '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/>',
+    "video": '<path d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5"/><rect x="2" y="6" width="14" height="12" rx="2"/>',
+    "user": '<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+    "send": '<path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/>',
+    "message": '<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>',
+    "check": '<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="m9 11 3 3L22 4"/>',
+    "alert": '<circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/>',
+}
+SPRITE = ('<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>'
+          + "".join(f'<symbol id="i-{k}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" '
+                    f'stroke-linecap="round" stroke-linejoin="round">{v}</symbol>' for k, v in ICONS.items())
+          + '</defs></svg>')
+
+
+def ic(name, cls=""):
+    c = ("icon " + cls).strip()
+    return f'<svg class="{c}" aria-hidden="true" focusable="false"><use href="#i-{name}"/></svg>'
+
+
+NEWTAB = '<span class="sr-only"> (opens in a new tab)</span>'
+
+
+def contact_rows():
+    """(icon, kicker, text, href, external) for every supplied contact detail. Nothing is invented."""
+    r = []
+    if CONTACT.get("name"):
+        r.append(("user", "Contact", CONTACT["name"], "", False))
+    if CONTACT.get("phone"):
+        r.append(("phone", "Phone", CONTACT["phone"], CONTACT.get("phone_tel", ""), False))
+    if CONTACT.get("whatsapp"):
+        r.append(("whatsapp", "WhatsApp", "Chat on WhatsApp", CONTACT["whatsapp"], True))
+    if CONTACT.get("email"):
+        r.append(("mail", "Email", CONTACT["email"], "mailto:" + CONTACT["email"], False))
+    if INSTAGRAM:
+        r.append(("instagram", "Instagram " + INSTAGRAM.get("handle", ""), "Follow on Instagram", INSTAGRAM["url"], True))
+    return r
+
+
+def contact_cards():
     out = []
-    if CONTACT["email"]:
-        out.append(f'<li><a href="mailto:{e(CONTACT["email"])}">{e(CONTACT["email"])}</a></li>')
-    if CONTACT["phone"]:
-        out.append(f'<li><a href="tel:{e(CONTACT["phone"])}">{e(CONTACT["phone"])}</a></li>')
-    if CONTACT["whatsapp"]:
-        out.append(f'<li><a href="{e(CONTACT["whatsapp"])}" rel="noopener">WhatsApp</a></li>')
-    if CONTACT["location"]:
-        out.append(f'<li>{e(CONTACT["location"])}</li>')
-    return out
+    for icon, kick, text, href, ext in contact_rows():
+        kick, _, sub = kick.partition(" @")
+        sub = f'<span class="cr-sub">@{e(sub)}</span>' if sub else ""
+        inner = f'<span class="ci">{ic(icon)}</span><span class="cr-text"><span class="cr-kick">{e(kick.strip())}</span><span class="cr-val">{e(text)}</span>{sub}</span>'
+        if href:
+            tgt = ' target="_blank" rel="noopener noreferrer"' if ext else ""
+            go = ic("arrow-up-right" if ext else "arrow-right", "cr-go")
+            out.append(f'<li><a class="contact-row" href="{e(href)}"{tgt}>{inner}{go}{NEWTAB if ext else ""}</a></li>')
+        else:
+            out.append(f'<li><div class="contact-row contact-row--static">{inner}</div></li>')
+    return "".join(out)
 
 
-def social_links():
-    return "".join(f'<li><a href="{e(s["url"])}" rel="noopener me" target="_blank">{e(s["label"])}'
-                   f'<span class="sr-only"> (opens in a new tab)</span></a></li>' for s in SOCIALS)
+def whatsapp_btn(cls="btn"):
+    if not CONTACT.get("whatsapp"):
+        return ""
+    return f'<a class="{cls}" href="{e(CONTACT["whatsapp"])}" target="_blank" rel="noopener noreferrer">{ic("whatsapp")}Chat on WhatsApp{ic("arrow-up-right")}{NEWTAB}</a>'
+
+
+def instagram_btn(cls="btn btn--ghost"):
+    if not INSTAGRAM:
+        return ""
+    return f'<a class="{cls}" href="{e(INSTAGRAM["url"])}" target="_blank" rel="noopener noreferrer">{ic("instagram")}Follow on Instagram{ic("arrow-up-right")}{NEWTAB}</a>'
+
+
+def footer_links():
+    out = []
+    if INSTAGRAM:
+        out.append(f'<li><a href="{e(INSTAGRAM["url"])}" target="_blank" rel="noopener noreferrer">{ic("instagram")}Instagram{NEWTAB}</a></li>')
+    if CONTACT.get("email"):
+        out.append(f'<li><a href="mailto:{e(CONTACT["email"])}">{ic("mail")}{e(CONTACT["email"])}</a></li>')
+    if CONTACT.get("phone"):
+        out.append(f'<li><a href="{e(CONTACT.get("phone_tel", ""))}">{ic("phone")}{e(CONTACT["phone"])}</a></li>')
+    if CONTACT.get("whatsapp"):
+        out.append(f'<li><a href="{e(CONTACT["whatsapp"])}" target="_blank" rel="noopener noreferrer">{ic("whatsapp")}WhatsApp{NEWTAB}</a></li>')
+    return "".join(out)
+
+
+def nav_social():
+    """Icon-only quick links shown at the bottom of the mobile menu (each has an accessible name)."""
+    out = []
+    if CONTACT.get("whatsapp"):
+        out.append(f'<li><a href="{e(CONTACT["whatsapp"])}" target="_blank" rel="noopener noreferrer" aria-label="Chat on WhatsApp (opens in a new tab)">{ic("whatsapp")}</a></li>')
+    if INSTAGRAM:
+        out.append(f'<li><a href="{e(INSTAGRAM["url"])}" target="_blank" rel="noopener noreferrer" aria-label="Follow on Instagram (opens in a new tab)">{ic("instagram")}</a></li>')
+    if CONTACT.get("email"):
+        out.append(f'<li><a href="mailto:{e(CONTACT["email"])}" aria-label="Email {e(CONTACT["email"])}">{ic("mail")}</a></li>')
+    if CONTACT.get("phone"):
+        out.append(f'<li><a href="{e(CONTACT.get("phone_tel", ""))}" aria-label="Call {e(CONTACT["phone"])}">{ic("phone")}</a></li>')
+    return f'<ul class="nav-social" aria-label="Contact quick links">{"".join(out)}</ul>' if out else ""
 
 
 def head(fname, title, desc):
@@ -61,7 +152,7 @@ def head(fname, title, desc):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#000000">
+<meta name="theme-color" content="#080A08">
 <title>{e(full_title)}</title>
 <meta name="description" content="{e(desc)}">
 <link rel="canonical" href="{e(url)}">
@@ -87,20 +178,15 @@ def page(fname, title, desc, body, scripts=()):
     links = "".join('<a href="%s"%s>%s</a>' % (h, ' aria-current="page"' if h == fname else "", t) for h, t in NAV)
     cur = ' aria-current="page"' if fname == "contact.html" else ""
     flinks = "".join(f'<li><a href="{h}">{t}</a></li>' for h, t in NAV + [("contact.html", "Contact")])
-    extra = ""
-    cl = contact_lines()
-    if cl:
-        extra += f'<ul class="footer-list" aria-label="Contact details">{"".join(cl)}</ul>'
-    if SOCIALS:
-        extra += f'<ul class="footer-list" aria-label="Social media">{social_links()}</ul>'
     js = "".join(f'<script src="js/{s}" defer></script>' for s in ("nav.js", "fx.js") + tuple(scripts))
     return f'''{head(fname, title, desc)}
 <body>
+{SPRITE}
 <a class="skip" href="#main">Skip to content</a>
 <header class="site-header"><div class="wrap">
 <a href="index.html" class="logo-link" aria-label="{e(NAME)}, home">{logo()}</a>
-<button class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav"><span></span></button>
-<nav class="nav" id="nav" aria-label="Main">{links}<a class="btn"{cur} href="contact.html">Contact</a></nav>
+<button class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="nav">{ic("menu", "i-menu")}{ic("close", "i-close")}</button>
+<nav class="nav" id="nav" aria-label="Main">{links}<a class="btn btn--sm"{cur} href="contact.html">Contact{ic("arrow-right")}</a>{nav_social()}</nav>
 </div></header>
 <main id="main" tabindex="-1">
 {body}
@@ -108,10 +194,10 @@ def page(fname, title, desc, body, scripts=()):
 <footer class="site-footer"><div class="wrap">
 <div class="footer-grid">
 <div class="footer-brand"><a href="index.html" class="logo-link" aria-label="{e(NAME)}, home">{logo("logo--footer", eager=False)}</a><p>Creative production and digital marketing for {e(SITE["audience"])}.</p></div>
-<nav aria-label="Footer"><ul class="footer-list">{flinks}</ul></nav>
-{extra}
+<nav aria-label="Footer"><p class="foot-h">Explore</p><ul class="footer-list">{flinks}</ul></nav>
+<div><p class="foot-h">Get in touch</p><ul class="footer-list footer-list--icons">{footer_links()}</ul></div>
 </div>
-<div class="copy">&copy; 2026 {e(NAME)}. All rights reserved.</div>
+<div class="copy">&copy; <span data-year>{YEAR}</span> {e(NAME)}. All rights reserved.</div>
 </div></footer>
 {js}
 </body>
@@ -120,9 +206,10 @@ def page(fname, title, desc, body, scripts=()):
 
 
 # ---------- shared blocks ----------
-def cta_band(heading="Ready to build your visual presence?", text="Tell us about your music and where you want to take it."):
-    return (f'<section class="band"><div class="wrap reveal"><h2>{e(heading)}</h2><p class="lead">{e(text)}</p>'
-            f'<div class="actions"><a class="btn" href="contact.html">Start a project</a></div></div></section>')
+def cta_band():
+    return (f'<section class="band"><div class="wrap reveal"><p class="eyebrow">Contact</p><h2>Let&rsquo;s create something.</h2>'
+            f'<p class="lead">Got a sound, a vision, or a project in mind? Let&rsquo;s bring it to life.</p>'
+            f'<div class="actions">{whatsapp_btn()}{instagram_btn()}</div></div></section>')
 
 
 def workflow():
@@ -135,7 +222,7 @@ def service_cards(detail=False):
     out = []
     for n, s in enumerate(SITE["services"]):
         pts = f'<ul class="ticks">{"".join(f"<li>{e(p)}</li>" for p in s["points"])}</ul>' if detail else ""
-        out.append(f'<article class="card reveal" style="--d:{n*0.1:.1f}s"><h3>{e(s["title"])}</h3><p>{e(s["summary"])}</p>{pts}</article>')
+        out.append(f'<article class="card reveal" style="--d:{n*0.1:.1f}s"><span class="icon-box">{ic(s.get("icon", "music"))}</span><h3>{e(s["title"])}</h3><p>{e(s["summary"])}</p>{pts}</article>')
     return f'<div class="grid">{"".join(out)}</div>'
 
 
@@ -151,11 +238,11 @@ def project_card(p, link=None, delay=0):
         media += f'<video class="preview" src="{e(p["preview"])}" muted loop playsinline preload="none" aria-hidden="true" tabindex="-1"></video>'
     badge = '<span class="badge">Placeholder</span>' if p["placeholder"] else ""
     if link:
-        media += f'<a class="media-hit" href="{link}" data-cursor="View" aria-label="See {e(p["title"])} on the Work page"></a>'
+        media += f'<a class="media-hit" href="{link}" data-cursor="View" aria-label="See {e(p["title"])} on the Work page"><span class="play-icon">{ic("play")}</span><span class="go-icon">{ic("arrow-up-right")}</span></a>'
     elif p["video"] and not ext:
         media += (f'<button type="button" class="media-hit play" data-video="{e(p["video"])}" data-poster="{e(p["cover"])}" data-title="{e(p["title"])}" '
-                  f'data-cursor="Play" aria-label="Play video: {e(p["title"])}"><span class="play-icon" aria-hidden="true"></span></button>')
-    ext_link = (f'<a class="text-link" href="{e(p["video"])}" target="_blank" rel="noopener">Watch video'
+                  f'data-cursor="Play" aria-label="Play video: {e(p["title"])}"><span class="play-icon">{ic("play")}</span></button>')
+    ext_link = (f'<a class="text-link" href="{e(p["video"])}" target="_blank" rel="noopener noreferrer">Watch video {ic("arrow-up-right")}'
                 f'<span class="sr-only"> for {e(p["title"])} (opens in a new tab)</span></a>') if ext else ""
     return (f'<li class="project reveal" style="--d:{delay}s" data-category="{cat}"><article><div class="project-media">{media}{badge}</div>'
             f'<p class="tag">{e(p.get("client",""))}{" &middot; " if p.get("client") else ""}{cat}</p><h3>{e(p["title"])}</h3><p>{e(p["description"])}</p>{ext_link}</article></li>')
@@ -172,7 +259,7 @@ def featured():
     real = [p for p in PROJECTS if not p["placeholder"]][:3] or PROJECTS[:3]
     cards = "".join(project_card(p, link="work.html", delay=i * 0.12) for i, p in enumerate(real))
     return (f'<section aria-labelledby="feat-h"><div class="wrap"><p class="eyebrow">Selected work</p><h2 class="reveal" id="feat-h">Recent video work</h2>'
-            f'<ul class="projects projects--feat">{cards}</ul><p class="more"><a class="text-link" href="work.html">See all work</a></p></div></section>')
+            f'<ul class="projects projects--feat">{cards}</ul><p class="more"><a class="text-link" href="work.html">See all work {ic("arrow-right")}</a></p></div></section>')
 
 
 def home():
@@ -180,7 +267,7 @@ def home():
 <p class="eyebrow">Creative production &amp; digital marketing</p>
 <h1>Your sound deserves a screen presence to match.</h1>
 <p class="lead">KrazE builds the video, content and brand around your music for {e(SITE["audience"])}, delivered as one joined-up 360&deg; service.</p>
-<div class="actions"><a class="btn" href="contact.html">Start a project</a><a class="btn btn--ghost" href="work.html">See the work</a></div>
+<div class="actions"><a class="btn" href="contact.html">Start a project{ic("arrow-right")}</a><a class="btn btn--ghost" href="work.html">See the work{ic("arrow-right")}</a></div>
 </div></section>
 {marquee()}
 <section aria-labelledby="s360-h"><div class="wrap">
@@ -188,7 +275,7 @@ def home():
 <h2 class="reveal" id="s360-h">One team for everything people see</h2>
 <p class="lead">Most artists juggle a videographer, a designer and someone to post. KrazE brings video production, social media management and artist branding together, so every release, set and announcement looks and feels like you.</p>
 {service_cards()}
-<p class="more"><a class="text-link" href="services.html">Explore the services</a></p>
+<p class="more"><a class="text-link" href="services.html">Explore the services {ic("arrow-right")}</a></p>
 </div></section>
 {featured()}
 {workflow()}
@@ -212,8 +299,8 @@ def work():
 <ul class="projects" id="projects">{cards}</ul>
 <p class="empty" id="empty" hidden>No projects in this category yet.</p>
 </div></section>
-<dialog id="player" aria-label="Video player"><button type="button" class="player-close" aria-label="Close video">&times;</button><video controls playsinline preload="none"></video></dialog>
-{cta_band("Want to see your music here?", "Start a project and we will plan it together.")}'''
+<dialog id="player" aria-label="Video player"><button type="button" class="player-close" aria-label="Close video">{ic("close")}</button><video controls playsinline preload="none"></video></dialog>
+{cta_band()}'''
 
 
 def services():
@@ -225,7 +312,7 @@ def services():
 <section aria-labelledby="pk-h"><div class="wrap">
 <p class="eyebrow">360&deg; service</p><h2 id="pk-h">All of it, coordinated</h2>
 <p class="lead">Choose one service or combine all three. In a 360&deg; engagement the video, the content calendar and the brand design are planned together, so everything points the same way. Tell us what you need and we will shape a plan around it.</p>
-<div class="actions"><a class="btn" href="contact.html">Ask about a 360&deg; plan</a></div>
+<div class="actions"><a class="btn" href="contact.html">Ask about a 360&deg; plan{ic("arrow-right")}</a></div>
 </div></section>
 {workflow()}
 {cta_band()}'''
@@ -239,25 +326,21 @@ def about():
 <section aria-labelledby="ab-h"><div class="wrap">
 <h2 id="ab-h">What we believe</h2>
 <div class="grid">
-<article class="card"><h3>Music first</h3><p>Everything we make starts from the artist&rsquo;s sound and story.</p></article>
-<article class="card"><h3>Consistent by design</h3><p>Video, social and branding are planned together so the whole presence feels like one.</p></article>
-<article class="card"><h3>Clear communication</h3><p>A simple process, so you always know what is happening and what comes next.</p></article>
+<article class="card"><span class="icon-box">{ic("music")}</span><h3>Music first</h3><p>Everything we make starts from the artist&rsquo;s sound and story.</p></article>
+<article class="card"><span class="icon-box">{ic("palette")}</span><h3>Consistent by design</h3><p>Video, social and branding are planned together so the whole presence feels like one.</p></article>
+<article class="card"><span class="icon-box">{ic("message")}</span><h3>Clear communication</h3><p>A simple process, so you always know what is happening and what comes next.</p></article>
 </div>
 <p class="notice"><strong>Placeholder:</strong> add the KrazE story, team and background here once supplied.</p>
 </div></section>
-{cta_band("Let us talk about your music.", "Tell us where you are and where you want to go.")}'''
+{cta_band()}'''
 
 
 def contact():
-    cl = contact_lines()
-    if cl or SOCIALS:
-        aside = '<h2 class="h3">Other ways to reach us</h2>'
-        if cl:
-            aside += f'<ul class="plain">{"".join(cl)}</ul>'
-        if SOCIALS:
-            aside += f'<ul class="plain">{social_links()}</ul>'
+    cards = contact_cards()
+    if cards:
+        aside = f'<p class="eyebrow">Reach us directly</p><ul class="contact-list">{cards}</ul>'
     else:
-        aside = ('<p class="notice"><strong>Placeholder:</strong> business email, phone and social links have not been supplied yet. '
+        aside = ('<p class="notice"><strong>Placeholder:</strong> contact details have not been supplied yet. '
                  'Add them in <code>content/site.json</code>.</p>')
     action = f' action="{e(ENDPOINT)}" method="post"' if ENDPOINT else ""
     turnstile = ""
@@ -270,12 +353,12 @@ def contact():
 <p class="lead">Tell us about your music and what you would like to create. Fields marked * are required.</p>
 <div id="form-wrap" data-endpoint="{e(ENDPOINT)}" data-min-seconds="{MIN_SECONDS}">
 <form id="contact-form" novalidate{action}>
-<label for="f-name">Name *<input id="f-name" name="name" autocomplete="name" required aria-describedby="f-name-err"><span class="err" id="f-name-err" hidden></span></label>
-<label for="f-email">Email *<input id="f-email" name="email" type="email" autocomplete="email" required aria-describedby="f-email-err"><span class="err" id="f-email-err" hidden></span></label>
-<label for="f-msg">Message *<textarea id="f-msg" name="message" rows="6" required minlength="10" aria-describedby="f-msg-err"></textarea><span class="err" id="f-msg-err" hidden></span></label>
+<label for="f-name"><span class="lbl">{ic("user")}Name *</span><input id="f-name" name="name" autocomplete="name" required aria-describedby="f-name-err"><span class="err" id="f-name-err" hidden></span></label>
+<label for="f-email"><span class="lbl">{ic("mail")}Email *</span><input id="f-email" name="email" type="email" autocomplete="email" required aria-describedby="f-email-err"><span class="err" id="f-email-err" hidden></span></label>
+<label for="f-msg"><span class="lbl">{ic("message")}Message *</span><textarea id="f-msg" name="message" rows="6" required minlength="10" aria-describedby="f-msg-err"></textarea><span class="err" id="f-msg-err" hidden></span></label>
 <div class="hp" aria-hidden="true"><label>Leave this field empty<input name="website" tabindex="-1" autocomplete="off"></label></div>
 {turnstile}
-<button class="btn" type="submit" id="f-submit">Send message</button>
+<button class="btn" type="submit" id="f-submit">{ic("send")}<span class="btn-label">Send message</span></button>
 <noscript><p class="notice">JavaScript is needed to send this form.</p></noscript>
 </form>
 <div id="form-status" class="status" role="status" aria-live="polite" tabindex="-1" hidden></div>

@@ -27,3 +27,6 @@ Source videos are large, so `public/media/` holds web versions: `<slug>.mp4` (72
     ffmpeg -ss 1.5 -i original.mp4 -frames:v 1 -vf "scale=720:-2" -q:v 4 public/media/<slug>.jpg
 
 Then add the project to `content/projects.json` and rebuild. Interactive effects (scroll reveal, hiding header, marquee, cursor label, magnetic buttons, hover previews) live in `public/js/fx.js` and `public/css/style.css`; all are disabled under `prefers-reduced-motion` and the site works without JS.
+
+## Theme and icons
+Palette (near-black, charcoal, neon lime `#B6FF00`, muted green `#78A600`) is defined as CSS variables at the top of `public/css/style.css`. Icons are Lucide-style outline SVGs inlined as a sprite by `build.py` (`ICONS` dict; no dependency). Contact details and social links live in `content/site.json`.
