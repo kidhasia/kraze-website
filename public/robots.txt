@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://kidhasia.github.io/kraze-website/sitemap.xml

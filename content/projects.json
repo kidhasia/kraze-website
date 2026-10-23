@@ -1,0 +1,77 @@
+{
+  "_help": "One object per project. 'cover' = poster image under public/; 'preview' = optional short muted hover clip; 'video' = a local file under public/ (opens in the player) or an https link (opens in a new tab). 'client' is optional. Set 'placeholder' to false only for real, supplied work. Categories: Video production, Social media, Branding & design.",
+  "projects": [
+    {
+      "title": "Jay Vibes 01",
+      "client": "Jay Vibes",
+      "category": "Video production",
+      "description": "Vertical video, 0:33.",
+      "cover": "media/jay-vibes-01.jpg",
+      "cover_width": 720,
+      "cover_height": 1280,
+      "preview": "media/jay-vibes-01-preview.mp4",
+      "video": "media/jay-vibes-01.mp4",
+      "placeholder": false
+    },
+    {
+      "title": "Jay Vibes 02",
+      "client": "Jay Vibes",
+      "category": "Video production",
+      "description": "Vertical video, 0:37.",
+      "cover": "media/jay-vibes-02.jpg",
+      "cover_width": 720,
+      "cover_height": 1280,
+      "preview": "media/jay-vibes-02-preview.mp4",
+      "video": "media/jay-vibes-02.mp4",
+      "placeholder": false
+    },
+    {
+      "title": "Jay Vibes 03",
+      "client": "Jay Vibes",
+      "category": "Video production",
+      "description": "Vertical video, 0:38.",
+      "cover": "media/jay-vibes-03.jpg",
+      "cover_width": 720,
+      "cover_height": 1280,
+      "preview": "media/jay-vibes-03-preview.mp4",
+      "video": "media/jay-vibes-03.mp4",
+      "placeholder": false
+    },
+    {
+      "title": "Freedom Sundays",
+      "client": "Universal Events",
+      "category": "Video production",
+      "description": "Vertical video, 0:14.",
+      "cover": "media/others-01.jpg",
+      "cover_width": 720,
+      "cover_height": 1280,
+      "preview": "media/others-01-preview.mp4",
+      "video": "media/others-01.mp4",
+      "placeholder": false
+    },
+    {
+      "title": "Untitled video",
+      "client": "",
+      "category": "Video production",
+      "description": "Video, 0:20.",
+      "cover": "media/others-02.jpg",
+      "cover_width": 720,
+      "cover_height": 782,
+      "preview": "media/others-02-preview.mp4",
+      "video": "media/others-02.mp4",
+      "placeholder": false
+    },
+    {
+      "title": "Space Shift",
+      "client": "Vortex",
+      "category": "Video production",
+      "description": "Vertical video, 0:15.",
+      "cover": "media/others-03.jpg",
+      "cover_width": 720,
+      "cover_height": 1280,
+      "preview": "media/others-03-preview.mp4",
+      "video": "media/others-03.mp4",
+      "placeholder": false
+    }
+  ]
+}
