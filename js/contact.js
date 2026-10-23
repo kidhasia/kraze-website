@@ -3,7 +3,7 @@
   if (!wrap || !form) return;
   var endpoint = wrap.getAttribute('data-endpoint'), minSeconds = +wrap.getAttribute('data-min-seconds') || 0;
   var status = document.getElementById('form-status'), btn = document.getElementById('f-submit');
-  var loaded = Date.now(), sending = false;
+  var loaded = Date.now(), sending = false, lbl = btn.querySelector('.btn-label'), NS = 'http://www.w3.org/2000/svg';
   var fields = { name: 'Please enter your name.', email: 'Please enter a valid email address.', message: 'Please enter a message of at least 10 characters.' };
 
   function err(el) { return document.getElementById(el.id + '-err'); }
@@ -21,8 +21,15 @@
     return !bad;
   }
   function show(msg, kind) {
-    status.hidden = false; status.className = 'status status--' + kind; status.textContent = msg;
+    status.hidden = false; status.className = 'status status--' + kind; status.textContent = '';
     status.setAttribute('role', kind === 'error' ? 'alert' : 'status');
+    var name = { success: 'check', error: 'alert' }[kind];
+    if (name) { // icon + text, so state is never conveyed by colour alone
+      var svg = document.createElementNS(NS, 'svg'), u = document.createElementNS(NS, 'use');
+      svg.setAttribute('class', 'icon'); svg.setAttribute('aria-hidden', 'true'); svg.setAttribute('focusable', 'false');
+      u.setAttribute('href', '#i-' + name); svg.appendChild(u); status.appendChild(svg);
+    }
+    var t = document.createElement('span'); t.textContent = msg; status.appendChild(t);
   }
   ['name', 'email', 'message'].forEach(function (n) {
     var el = form.elements[n];
@@ -40,7 +47,7 @@
     if (!endpoint) { show('The contact form is not connected yet, so your message was not sent. Please use another way to reach us.', 'error'); return; }
     if ((Date.now() - loaded) / 1000 < minSeconds) { show('Please wait a moment and press send again.', 'error'); return; }
 
-    sending = true; btn.disabled = true; btn.textContent = 'Sending…'; form.setAttribute('aria-busy', 'true');
+    sending = true; btn.disabled = true; lbl.textContent = 'Sending…'; form.setAttribute('aria-busy', 'true');
     show('Sending your message…', 'info');
     var data = {};
     new FormData(form).forEach(function (v, k) { if (k !== 'website') data[k] = v; });
@@ -58,7 +65,7 @@
       })
       .then(function () {
         clearTimeout(t); sending = false; form.removeAttribute('aria-busy');
-        btn.disabled = false; btn.textContent = 'Send message';
+        btn.disabled = false; lbl.textContent = 'Send message';
       });
   });
 })();
